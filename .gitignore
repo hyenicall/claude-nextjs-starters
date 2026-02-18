@@ -44,3 +44,6 @@ next-env.d.ts
 .playwright-mcp/
 404-*.png
 404-*.md
+
+# claude code 로컬 설정
+.claude/settings.local.json
