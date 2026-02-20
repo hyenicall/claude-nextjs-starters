@@ -1,7 +1,13 @@
+import type { Metadata } from "next"
 import { Container } from "@/components/layout/container"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Code2, Palette, Database, Shield } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "소개 | Next.js Starter",
+  description: "프로덕션 레디 환경에서 빠르게 개발을 시작하세요.",
+}
 
 const techStack = [
   {

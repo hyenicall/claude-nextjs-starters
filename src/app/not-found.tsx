@@ -1,8 +1,14 @@
+import type { Metadata } from "next"
 import { Container } from "@/components/layout/container"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { FileQuestion } from "lucide-react"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: "404 - 페이지를 찾을 수 없습니다",
+  description: "요청하신 페이지를 찾을 수 없습니다.",
+}
 
 export default function NotFoundPage() {
   return (
@@ -24,9 +30,4 @@ export default function NotFoundPage() {
       />
     </Container>
   )
-}
-
-export const metadata = {
-  title: "404 - 페이지를 찾을 수 없습니다",
-  description: "요청하신 페이지를 찾을 수 없습니다.",
 }
