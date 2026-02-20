@@ -37,14 +37,14 @@ export function StatCard({
         {trend && (
           <div className="mt-1 flex items-center gap-1 text-xs">
             {isPositive ? (
-              <TrendingUp className="size-3 text-green-500" />
+              <TrendingUp className="size-3 text-green-600 dark:text-green-400" />
             ) : (
-              <TrendingDown className="size-3 text-red-500" />
+              <TrendingDown className="size-3 text-red-600 dark:text-red-400" />
             )}
             <span
               className={cn(
                 "font-medium",
-                isPositive ? "text-green-500" : "text-red-500",
+                isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400",
               )}
             >
               {isPositive ? "+" : ""}
