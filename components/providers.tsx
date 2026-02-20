@@ -14,8 +14,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <TooltipProvider>
         {children}
+        <Toaster richColors position="bottom-right" />
       </TooltipProvider>
-      <Toaster richColors position="bottom-right" />
     </ThemeProvider>
   )
 }

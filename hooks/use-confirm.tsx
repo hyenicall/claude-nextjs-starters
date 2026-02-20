@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import type { ReactNode } from "react"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface UseConfirmOptions {
@@ -17,7 +18,7 @@ export function useConfirm({
   confirmLabel,
   cancelLabel,
   variant,
-}: UseConfirmOptions): [() => React.JSX.Element, () => Promise<boolean>] {
+}: UseConfirmOptions): [ReactNode, () => Promise<boolean>] {
   const [promise, setPromise] = useState<{
     resolve: (value: boolean) => void
   } | null>(null)
@@ -40,24 +41,21 @@ export function useConfirm({
     setPromise(null)
   }, [promise])
 
-  const ConfirmationDialog = useCallback(
-    () => (
-      <ConfirmDialog
-        open={promise !== null}
-        onOpenChange={(open) => {
-          if (!open) handleCancel()
-        }}
-        title={title}
-        description={description}
-        confirmLabel={confirmLabel}
-        cancelLabel={cancelLabel}
-        variant={variant}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-      />
-    ),
-    [promise, title, description, confirmLabel, cancelLabel, variant, handleConfirm, handleCancel],
+  const dialog = (
+    <ConfirmDialog
+      open={promise !== null}
+      onOpenChange={(open) => {
+        if (!open) handleCancel()
+      }}
+      title={title}
+      description={description}
+      confirmLabel={confirmLabel}
+      cancelLabel={cancelLabel}
+      variant={variant}
+      onConfirm={handleConfirm}
+      onCancel={handleCancel}
+    />
   )
 
-  return [ConfirmationDialog, confirm]
+  return [dialog, confirm]
 }
