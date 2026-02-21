@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-Next.js 15 + React 19 + Tailwind CSS v4 + shadcn/ui 기반의 모던 웹 스타터킷입니다.
+Next.js 16.1.6 + React 19.2.3 + Tailwind CSS v4 + shadcn/ui 기반의 모던 웹 스타터킷입니다.
 
 **주요 기술 스택:**
 - Next.js 16.1.6 (App Router)
@@ -12,9 +12,12 @@ Next.js 15 + React 19 + Tailwind CSS v4 + shadcn/ui 기반의 모던 웹 스타�
 - TypeScript 5
 - Tailwind CSS v4
 - shadcn/ui 컴포넌트
-- Zustand (상태 관리)
-- React Hook Form + Zod (폼 검증)
+- Zustand 5.0.11 (상태 관리)
+- React Hook Form 7 + Zod 4 (폼 검증)
 - next-themes (다크모드)
+- Sonner 2 (토스트 알림)
+- Lucide React (아이콘)
+- usehooks-ts 3
 
 ## 개발 명령어
 
@@ -46,7 +49,12 @@ pnpm lint
 │   └── blog/              # Blog 페이지
 ├── components/            # React 컴포넌트
 │   ├── ui/                # shadcn/ui 기반 재사용 컴포넌트
-│   ├── layout/            # 레이아웃 컴포넌트 (Header, Footer, Container)
+│   ├── layout/            # 레이아웃 컴포넌트
+│   │   ├── site-header.tsx    # 헤더
+│   │   ├── site-footer.tsx    # 푸터
+│   │   ├── container.tsx      # 반응형 컨테이너
+│   │   ├── main-nav.tsx       # 데스크톱 네비게이션
+│   │   └── mobile-nav.tsx     # 모바일 네비게이션
 │   ├── providers.tsx      # Context Providers
 │   └── theme-toggle.tsx   # 테마 토글 버튼
 ├── config/                # 애플리케이션 설정
@@ -55,8 +63,18 @@ pnpm lint
 │   └── validations/       # Zod 검증 스키마
 ├── stores/                # Zustand 상태 관리 스토어
 ├── hooks/                 # 커스텀 React 훅
+│   └── use-confirm.tsx    # Promise 기반 확인 다이얼로그 훅
 ├── types/                 # TypeScript 타입 정의
-└── public/                # 정적 파일
+├── public/                # 정적 파일
+├── .claude/               # Claude Code 설정
+│   ├── agents/            # 커스텀 에이전트
+│   │   └── code-reviewer.md
+│   ├── commands/          # 커스텀 커맨드
+│   │   ├── review.md      # /review 커맨드
+│   │   └── git/commit.md  # /git:commit 커맨드
+│   └── hooks/             # 이벤트 훅
+│       └── slack-notify.sh
+└── .mcp.json              # MCP 서버 설정
 ```
 
 ### 경로 별칭
@@ -79,6 +97,8 @@ import { siteConfig } from "@/config/site"
 - `SiteHeader`: 로고, 네비게이션 메뉴, 테마 토글
 - `SiteFooter`: 저작권, 링크
 - `Container`: 반응형 컨테이너 (px-4 sm:px-6 lg:px-8)
+- `MainNav`: 데스크톱 네비게이션, `usePathname`으로 현재 경로 감지하여 활성 링크 표시
+- `MobileNav`: Sheet 기반 모바일 사이드바 네비게이션
 
 ### UI 컴포넌트 패턴
 
@@ -98,10 +118,75 @@ import { siteConfig } from "@/config/site"
 - `src/app/not-found.tsx`: 404 페이지
 - `src/app/blog/page.tsx`: 블로그 준비 중
 
+**StatCard 패턴:**
+통계 수치 표시에는 `StatCard` 컴포넌트를 사용합니다.
+
+```typescript
+<StatCard
+  title="총 사용자"
+  value="1,234"
+  icon={Users}
+  trend={12.5}  // 양수: 녹색 상승, 음수: 빨간색 하강
+/>
+```
+
+**ConfirmDialog + useConfirm 패턴:**
+비파괴적 확인이 필요한 작업에는 `useConfirm` 훅을 사용합니다.
+
+```typescript
+const [dialog, confirm] = useConfirm({
+  title: "정말 삭제하시겠습니까?",
+  description: "이 작업은 취소할 수 없습니다.",
+  variant: "destructive"
+})
+
+const handleDelete = async () => {
+  const ok = await confirm()
+  if (ok) { /* 삭제 처리 */ }
+}
+
+// JSX에서 dialog 렌더링
+return (
+  <>
+    {dialog}
+    <Button onClick={handleDelete}>삭제</Button>
+  </>
+)
+```
+
+**기타 입력 컴포넌트:**
+- `PasswordInput`: 비밀번호 표시/숨기기 토글 내장 입력
+- `SearchInput`: 검색어 입력 + 지우기 버튼 내장
+- `Spinner`: 로딩 인디케이터 (`size` prop: `sm` / `md` / `lg`)
+
 **컴포넌트 재사용 원칙:**
 - 새로운 페이지 생성 시 기존 컴포넌트를 최대한 재사용
 - Container + EmptyState 조합 패턴 따르기
 - 다크모드 자동 지원 (theme-aware 컴포넌트 사용)
+
+### Providers 구성
+
+`components/providers.tsx`의 실제 구성:
+
+```typescript
+// ThemeProvider > TooltipProvider > children + Toaster 순서
+<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+  <TooltipProvider>
+    {children}
+    <Toaster richColors position="bottom-right" />
+  </TooltipProvider>
+</ThemeProvider>
+```
+
+- `TooltipProvider`가 루트에 있으므로 모든 페이지에서 `Tooltip` 컴포넌트 바로 사용 가능
+- `Toaster`는 Sonner 기반, `toast()` 함수로 알림 표시
+
+### 커스텀 훅
+
+**useConfirm** (`hooks/use-confirm.tsx`):
+Promise 기반 확인 다이얼로그 훅. `[dialog, confirm]` 튜플 반환.
+- `dialog`: JSX에 렌더링할 ConfirmDialog 요소
+- `confirm()`: 사용자 응답을 기다리는 Promise (`boolean` 반환)
 
 ### 상태 관리
 
@@ -159,6 +244,32 @@ next-themes를 사용하여 다크모드를 지원합니다.
 - `any` 타입 사용 금지
 - 모든 타입은 `types/index.ts`에 정의
 
+## Claude Code 개발 환경
+
+### MCP 서버 설정 (.mcp.json)
+
+프로젝트에 다음 MCP 서버가 설정되어 있습니다:
+
+- **playwright**: E2E 테스팅 및 브라우저 자동화
+- **context7**: 라이브러리 문서 검색 (최신 API 참조)
+- **sequential-thinking**: 복잡한 문제 단계별 추론
+- **shadcn**: shadcn/ui 컴포넌트 관리 및 설치
+
+### 커스텀 커맨드 (.claude/commands/)
+
+- `/review`: 브랜치 머지 전 코드 품질 검증 (lint, build, AI 리뷰)
+- `/git:commit`: 이모지 컨벤셔널 커밋 포맷으로 커밋 메시지 생성
+
+### 코드 리뷰어 에이전트 (.claude/agents/code-reviewer.md)
+
+구현 완료 후 자동으로 코드 리뷰를 실행하는 에이전트입니다.
+TypeScript 타입 안전성, 접근성, 다크모드, 반응형 등을 체크합니다.
+
+### Slack 알림 훅 (.claude/hooks/slack-notify.sh)
+
+권한 요청 시 / 작업 완료 시 Slack 채널로 알림을 전송합니다.
+사용하려면 `SLACK_WEBHOOK_URL` 환경변수를 설정해야 합니다.
+
 ## 코딩 규칙
 
 ### 컴포넌트 작성
@@ -189,7 +300,9 @@ next-themes를 사용하여 다크모드를 지원합니다.
 4. metadata export로 SEO 설정
 
 ```typescript
-export const metadata = {
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
   title: "페이지 제목",
   description: "페이지 설명",
 }
